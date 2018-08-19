@@ -2,8 +2,8 @@ var pg = require('pg');
 
 module.exports = function (config, logger) {
     var pool = new pg.Pool({
-        host: config.host,
-        port: config.port,
+        host: config.host || 'localhost',
+        port: config.port || 5432,
         database: config.db,
         user: config.user,
         password: config.password
@@ -20,7 +20,7 @@ module.exports = function (config, logger) {
     }
 
     function ensureMigrationTableExists() {
-        return exec('create table if not exists "__migrations__" (id bigint NOT NULL)');
+        return exec('create table if not exists "__migrations__" (id bigint PRIMARY KEY)');
     }
 
     return {
