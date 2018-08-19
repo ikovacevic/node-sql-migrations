@@ -4,12 +4,15 @@ var runMigrationsCommand = require('./commands/run-migrations-command')
 var rollbackMigrationCommand = require('./commands/rollback-migration-command');
 
 var LOGGER = console;
+var DB_ADAPTER;
 
 function getAdapter(config) {
-    // set 'pg' as default adapter for backward compatibility
-    var adapterName = config.adapter || 'pg';
-    var adapter = require('./adapters/' + adapterName);
-    return adapter(config, LOGGER);
+    if (!DB_ADAPTER) {
+        var adapterName = config.adapter || 'pg'; // set 'pg' as default adapter for backward compatibility
+        var adapter = require('./adapters/' + adapterName);
+        DB_ADAPTER = adapter(config, LOGGER);
+    }
+    return DB_ADAPTER;
 }
 
 function migrate(config) {
