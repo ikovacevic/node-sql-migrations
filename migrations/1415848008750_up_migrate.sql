@@ -1,1 +1,1 @@
-create table "testtesttest" (id int);
+create table testtesttest (id int);

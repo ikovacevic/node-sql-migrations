@@ -1,26 +1,28 @@
-var pg = require('pg');
+var mariadb = require('mariadb');
 
 module.exports = function (config, logger) {
-    var pool = new pg.Pool({
+    var pool = mariadb.createPool({
         host: config.host || 'localhost',
-        port: config.port || 5432,
+        port: config.port || 3306,
         database: config.db,
         user: config.user,
         password: config.password
     });
 
+    var emptyRegExp = /^\s*$/;
+
     function exec(query, values) {
-        return pool.query(query, values).catch(function (err) {
-            //add the sql line number to the error output if available
-            if (err && err.position) {
-                err.sql_line = (query.substring(0, err.position).match(/\n/g) || []).length + 1;
-            }
-            throw err;
-        });
+        if (emptyRegExp.exec(query)) {
+            return Promise.resolve([]);
+        } else {
+            return pool.getConnection().then(function(conn) {
+                return conn.query(query, values);
+            });
+        }
     }
 
     function ensureMigrationTableExists() {
-        return exec('create table if not exists "__migrations__" (id bigint PRIMARY KEY)');
+        return exec('create table if not exists __migrations__ (id bigint PRIMARY KEY)');
     }
 
     return {
@@ -28,7 +30,7 @@ module.exports = function (config, logger) {
             return ensureMigrationTableExists().then(function () {
                 return exec('select * from __migrations__');
             }).then(function (result) {
-                return result.rows.map(function (row) { return row.id; });
+                return result.map(function (row) { return row.id.toString(); });
             });
         },
         applyMigration: function applyMigration(migration, sql) {
@@ -37,7 +39,7 @@ module.exports = function (config, logger) {
                 if (config.debug) logger.log(result);
                 logger.log('===============================================');
                 var values = [migration.match(/^(\d)+/)[0]];
-                return exec('insert into __migrations__ (id) values ($1)', values);
+                return exec('insert into __migrations__ (id) values (?)', values);
             });
         },
         rollbackMigration: function rollbackMigration(migration, sql) {
@@ -46,7 +48,7 @@ module.exports = function (config, logger) {
                 if (config.debug) logger.log(result);
                 logger.log('===============================================');
                 var values = [migration.match(/^(\d)+/)[0]];
-                return exec('delete from __migrations__ where id = $1', values);
+                return exec('delete from __migrations__ where id = ?', values);
             });
         },
         dispose: function dispose() {

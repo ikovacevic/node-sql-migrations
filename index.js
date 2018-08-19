@@ -1,14 +1,23 @@
 var MigrationProvider = require('./migration-provider');
-var PgAdapter = require('./adapters/pg');
 var createMigrationCommand = require('./commands/create-migration-command');
 var runMigrationsCommand = require('./commands/run-migrations-command')
 var rollbackMigrationCommand = require('./commands/rollback-migration-command');
 
 var LOGGER = console;
+var DB_ADAPTER;
+
+function getAdapter(config) {
+    if (!DB_ADAPTER) {
+        var adapterName = config.adapter || 'pg'; // set 'pg' as default adapter for backward compatibility
+        var adapter = require('./adapters/' + adapterName);
+        DB_ADAPTER = adapter(config, LOGGER);
+    }
+    return DB_ADAPTER;
+}
 
 function migrate(config) {
     var migrationProvider = MigrationProvider(config);
-    var adapter = PgAdapter(config, LOGGER);
+    var adapter = getAdapter(config);
     return runMigrationsCommand(migrationProvider, adapter, LOGGER).then(function () {
         return adapter.dispose();
     }, function (error) {
@@ -21,7 +30,7 @@ function migrate(config) {
 
 function rollback(config) {
     var migrationProvider = MigrationProvider(config);
-    var adapter = PgAdapter(config, LOGGER);
+    var adapter = getAdapter(config);
     return rollbackMigrationCommand(migrationProvider, adapter, LOGGER).then(function () {
         return adapter.dispose();
     }, function (error) {
