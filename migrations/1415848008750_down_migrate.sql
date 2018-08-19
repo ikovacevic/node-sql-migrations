@@ -1,1 +1,1 @@
-drop table "testtesttest";
+drop table testtesttest;
