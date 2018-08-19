@@ -36,7 +36,7 @@ module.exports = function (config, logger) {
         applyMigration: function applyMigration(migration, sql) {
             return exec(sql).then(function (result) {
                 logger.log('Applying ' + migration);
-                logger.log(result)
+                if (config.debug) logger.log(result);
                 logger.log('===============================================');
                 var values = [migration.match(/^(\d)+/)[0]];
                 return exec('insert into __migrations__ (id) values (?)', values);
@@ -45,7 +45,7 @@ module.exports = function (config, logger) {
         rollbackMigration: function rollbackMigration(migration, sql) {
             return exec(sql).then(function (result) {
                 logger.log('Reverting ' + migration);
-                logger.log(result)
+                if (config.debug) logger.log(result);
                 logger.log('===============================================');
                 var values = [migration.match(/^(\d)+/)[0]];
                 return exec('delete from __migrations__ where id = ?', values);
