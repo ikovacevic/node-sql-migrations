@@ -6,7 +6,8 @@ module.exports = function (config, logger) {
         port: config.port || 3306,
         database: config.db,
         user: config.user,
-        password: config.password
+        password: config.password,
+        multipleStatements: true
     });
 
     var emptyRegExp = /^\s*$/;
