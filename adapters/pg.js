@@ -9,6 +9,10 @@ module.exports = function (config, logger) {
         password: config.password
     });
 
+    function getMigrationIdFromMigrationName(migrationName) {
+        return migrationName && migrationName.match(/^(\d)+/)[0];
+    }
+
     function exec(query, values) {
         return pool.query(query, values).catch(function (err) {
             //add the sql line number to the error output if available
@@ -24,6 +28,14 @@ module.exports = function (config, logger) {
     }
 
     return {
+        addMigrationId: function(migrationName) {
+            const migrationId = getMigrationIdFromMigrationName(migrationName);
+            return exec('insert into __migrations__ (id) values ($1)', [migrationId]);
+        },
+        deleteMigrationId: function(migrationName) {
+            const migrationId = getMigrationIdFromMigrationName(migrationName);
+            return exec('delete from __migrations__ where id = $1', [migrationId]);
+        },
         appliedMigrations: function appliedMigrations() {
             return ensureMigrationTableExists().then(function () {
                 return exec('select * from __migrations__');
@@ -31,24 +43,8 @@ module.exports = function (config, logger) {
                 return result.rows.map(function (row) { return row.id; });
             });
         },
-        applyMigration: function applyMigration(migration, sql) {
-            return exec(sql).then(function (result) {
-                logger.log('Applying ' + migration);
-                if (config.debug) logger.log(result);
-                logger.log('===============================================');
-                var values = [migration.match(/^(\d)+/)[0]];
-                return exec('insert into __migrations__ (id) values ($1)', values);
-            });
-        },
-        rollbackMigration: function rollbackMigration(migration, sql) {
-            return exec(sql).then(function (result) {
-                logger.log('Reverting ' + migration);
-                if (config.debug) logger.log(result);
-                logger.log('===============================================');
-                var values = [migration.match(/^(\d)+/)[0]];
-                return exec('delete from __migrations__ where id = $1', values);
-            });
-        },
+        applyMigration: exec,
+        rollbackMigration: exec,
         dispose: function dispose() {
             return pool.end();
         }

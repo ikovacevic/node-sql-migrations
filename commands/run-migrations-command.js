@@ -1,14 +1,14 @@
 var chalk = require('chalk');
+var path = require('path');
 
-module.exports = function (migrationProvider, adapter, logger) {
+module.exports = function (migrationProvider, adapter, logger, config, jsMigrationContext) {
     return adapter.appliedMigrations()
         .then(function (appliedMigrationIds) {
             var migrationsList = migrationProvider.getMigrationsList();
             var pending = getPending(migrationsList, appliedMigrationIds);
 
             if (pending.length === 0) {
-                logger.log('No pending migrations');
-                return;
+                throw new Error('No pending migrations');
             }
 
             logger.log('Pending migrations:');
@@ -21,8 +21,24 @@ module.exports = function (migrationProvider, adapter, logger) {
             while (migration = pending.shift()) {
                 (function (migration) {
                     migrationProgress = migrationProgress.then(function () {
-                        var sql = migrationProvider.getSql(migration);
-                        return adapter.applyMigration(migration, sql);
+                        logger.log('');
+                        logger.log('===============================================');
+                        logger.log('Applying ' + migration);
+                        if (migration.endsWith('.js')) {
+                            logger.log('-----------------------------------------------');
+                            const absolutePath = path.join(config.migrationsDir, migration);
+                            const m = require(absolutePath);
+                            return m(jsMigrationContext);
+                        } else {
+                            var sql = migrationProvider.getSql(migration);
+                            return adapter.applyMigration(sql);
+                        }
+                    }).then(function(result) {
+                        if (config.debug) {
+                            logger.log('-----------------------------------------------');
+                            logger.log(result);
+                        }
+                        return adapter.addMigrationId(migration);
                     });
                 })(migration);
             }

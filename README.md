@@ -43,6 +43,9 @@ In your project
 ```js
 require('sql-migrations').migrate({
     // configuration here. See the Configuration section
+}, {
+    // optional context for JavaScript (`.js`) migrations
+    // usually object with access to models and DAO
 });
 ```
 This returns a promise which resolves/rejects whenever the migration is complete.
@@ -52,6 +55,9 @@ In your project
 ```js
 require('sql-migrations').rollback({
     // configuration here. See the Configuration section
+}, {
+    // optional context for JavaScript (`.js`) migrations
+    // usually object with access to models and DAO
 });
 ```
 This returns a promise which resolves/rejects whenever the rollback is complete.
@@ -96,7 +102,14 @@ Used with [MariaDB](https://mariadb.org/) Database.
 Depends on [`mariadb`](https://www.npmjs.com/package/mariadb) npm package.
 
 
+### Context
+When calling `migrate` and `rollback` programmatically you can specify optional 2nd parameter with
+Context for executing your JavaScript (`.js`) migrations.
+
+
 ### Migration files
+
+#### Native SQL migrations
 Write raw sql in your migrations. You can also include placeholders which will be substituted.
 example
 ```sql
@@ -107,4 +120,17 @@ create table test_table (id bigint, name varchar(255));
 ```sql
 -- ./migrations/1415860098827_down_migration_name.sql
 drop table test_table;
+```
+
+#### JavaScript migrations
+You can also write migrations in JavaScript (migration file has to have `.js` extension). If you need some specific context (with access to models and DAO in framework you're using) you have to use Programmatic API and call `migrate` and `rollback` functions with that context as second argument and it will be supplied to each migration.
+
+Example migration.
+
+```javascript
+module.exports = function(ctx) {
+
+    // do something with data
+
+};
 ```
