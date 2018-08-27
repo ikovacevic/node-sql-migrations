@@ -15,10 +15,10 @@ function getAdapter(config) {
     return DB_ADAPTER;
 }
 
-function migrate(config) {
+function migrate(config, jsMigrationsContext) {
     var migrationProvider = MigrationProvider(config);
     var adapter = getAdapter(config);
-    return runMigrationsCommand(migrationProvider, adapter, LOGGER).then(function () {
+    return runMigrationsCommand(migrationProvider, adapter, LOGGER, config, jsMigrationsContext).then(function () {
         return adapter.dispose();
     }, function (error) {
         function rethrowOriginalError() {
@@ -28,10 +28,10 @@ function migrate(config) {
     });
 }
 
-function rollback(config) {
+function rollback(config, jsMigrationsContext) {
     var migrationProvider = MigrationProvider(config);
     var adapter = getAdapter(config);
-    return rollbackMigrationCommand(migrationProvider, adapter, LOGGER).then(function () {
+    return rollbackMigrationCommand(migrationProvider, adapter, LOGGER, config, jsMigrationsContext).then(function () {
         return adapter.dispose();
     }, function (error) {
         function rethrowOriginalError() {

@@ -26,7 +26,19 @@ module.exports = function (config, logger) {
         return exec('create table if not exists __migrations__ (id bigint PRIMARY KEY)');
     }
 
+    function getMigrationIdFromMigrationName(migrationName) {
+        return migrationName && migrationName.match(/^(\d)+/)[0];
+    }
+
     return {
+        addMigrationId: function(migrationName) {
+            const migrationId = getMigrationIdFromMigrationName(migrationName);
+            return exec('insert into __migrations__ (id) values (?)', [migrationId]);
+        },
+        deleteMigrationId: function(migrationName) {
+            const migrationId = getMigrationIdFromMigrationName(migrationName);
+            return exec('delete from __migrations__ where id = ?', [migrationId]);
+        },
         appliedMigrations: function appliedMigrations() {
             return ensureMigrationTableExists().then(function () {
                 return exec('select * from __migrations__');
@@ -34,24 +46,8 @@ module.exports = function (config, logger) {
                 return result.map(function (row) { return row.id.toString(); });
             });
         },
-        applyMigration: function applyMigration(migration, sql) {
-            return exec(sql).then(function (result) {
-                logger.log('Applying ' + migration);
-                if (config.debug) logger.log(result);
-                logger.log('===============================================');
-                var values = [migration.match(/^(\d)+/)[0]];
-                return exec('insert into __migrations__ (id) values (?)', values);
-            });
-        },
-        rollbackMigration: function rollbackMigration(migration, sql) {
-            return exec(sql).then(function (result) {
-                logger.log('Reverting ' + migration);
-                if (config.debug) logger.log(result);
-                logger.log('===============================================');
-                var values = [migration.match(/^(\d)+/)[0]];
-                return exec('delete from __migrations__ where id = ?', values);
-            });
-        },
+        applyMigration: exec,
+        rollbackMigration: exec,
         dispose: function dispose() {
             return pool.end();
         }
