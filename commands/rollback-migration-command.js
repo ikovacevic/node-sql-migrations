@@ -8,7 +8,8 @@ module.exports = function (migrationProvider, adapter, logger, config, jsMigrati
         var lastAppliedMigrationId = ids[ids.length - 1];
 
         if (!lastAppliedMigrationId) {
-            throw new Error('Nothing to rollback');
+            logger.log('Nothing to rollback');
+            return
         }
 
         migration = migrationProvider.getMigrationsList().find(function (migration) {

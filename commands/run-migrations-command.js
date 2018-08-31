@@ -8,7 +8,8 @@ module.exports = function (migrationProvider, adapter, logger, config, jsMigrati
             var pending = getPending(migrationsList, appliedMigrationIds);
 
             if (pending.length === 0) {
-                throw new Error('No pending migrations');
+                logger.log('No pending migrations');
+                return;
             }
 
             logger.log('Pending migrations:');
